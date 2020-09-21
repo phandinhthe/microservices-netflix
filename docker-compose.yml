@@ -1,0 +1,50 @@
+version: '3.4'
+
+services:
+  discovery-service:
+    image: discovery-service
+    build:
+      context: ./discovery-service
+      dockerfile: Dockerfile
+    container_name: discovery-service
+    networks:
+      - microservice_net
+    ports:
+      - 8761:8761
+    healthcheck:
+      test: "curl -i 'http://localhost:8761'"
+      interval: 2s
+      timeout: 30s
+      retries: 15
+
+  api-gateway:
+    image: api-gateway
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    depends_on:
+      - discovery-service
+    networks:
+      - microservice_net
+    environment:
+      - JAVA_OPTS=-DEUREKA_SERVER=http://discovery-service:8761/eureka
+    ports:
+      - 8760:8760
+
+  client-service:
+    image: client-service
+    build:
+      context: ./client-service
+      dockerfile: Dockerfile
+    depends_on:
+      - discovery-service
+    networks:
+      - microservice_net
+    environment:
+      - JAVA_OPTS=-DEUREKA_SERVER=http://discovery-service:8761/eureka
+
+networks:
+  microservice_net:
+
+
